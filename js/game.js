@@ -24,8 +24,7 @@ class Game {
         
         this.keys = {
             left: false,
-            right: false,
-            space: false
+            right: false
         };
         
         // 添加buff系统
@@ -80,6 +79,9 @@ class Game {
         this.touchStartX = 0;
         this.isTouching = false;
         
+        // 添加自动射击相关属性
+        this.autoShootInterval = 200; // 自动射击间隔（毫秒）
+        
         this.bindEvents();
         this.updateScore(0);
         this.updateLives(3);
@@ -96,14 +98,12 @@ class Game {
     handleKeyDown(e) {
         if (e.key === 'ArrowLeft') this.keys.left = true;
         if (e.key === 'ArrowRight') this.keys.right = true;
-        if (e.key === ' ') this.keys.space = true;
         if (e.key === 'p' || e.key === 'P') this.togglePause();
     }
     
     handleKeyUp(e) {
         if (e.key === 'ArrowLeft') this.keys.left = false;
         if (e.key === 'ArrowRight') this.keys.right = false;
-        if (e.key === ' ') this.keys.space = false;
     }
     
     togglePause() {
@@ -127,7 +127,8 @@ class Game {
             y: -30,
             width: 30,
             height: 30,
-            speed: 2 + Math.random() * 2
+            speed: 2 + Math.random() * 3,  // 增加敌机速度变化范围
+            rotationAngle: Math.random() * Math.PI * 2  // 添加旋转角度
         };
         this.enemies.push(enemy);
     }
@@ -172,7 +173,7 @@ class Game {
     
     shoot() {
         const currentTime = Date.now();
-        if (this.keys.space && currentTime - this.lastShootTime >= this.shootCooldown) {
+        if (currentTime - this.lastShootTime >= this.autoShootInterval) {
             if (this.isMultiShot) {
                 // 三发子弹
                 for (let i = -1; i <= 1; i++) {
@@ -182,7 +183,7 @@ class Game {
                         width: 5,
                         height: 10,
                         speed: 7,
-                        angle: i * 0.2 // 添加一个小角度
+                        angle: i * 0.2
                     };
                     this.bullets.push(bullet);
                 }
@@ -221,18 +222,23 @@ class Game {
         // 更新敌人位置
         this.enemies = this.enemies.filter(enemy => {
             enemy.y += enemy.speed;
+            enemy.rotationAngle += 0.02;  // 添加旋转效果
             
             // 检查碰撞
-            this.bullets.forEach((bullet, bulletIndex) => {
+            for (let i = this.bullets.length - 1; i >= 0; i--) {
+                const bullet = this.bullets[i];
                 if (this.checkCollision(bullet, enemy)) {
-                    this.bullets.splice(bulletIndex, 1);
+                    // 添加爆炸效果
+                    this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                    this.bullets.splice(i, 1);
                     this.updateScore(this.score + 100);
                     return false;
                 }
-            });
+            }
             
             // 检查与玩家碰撞
-            if (this.checkCollision(enemy, this.player)) {
+            if (!this.isInvincible && this.checkCollision(enemy, this.player)) {
+                this.createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
                 this.updateLives(this.lives - 1);
                 if (this.lives <= 0) {
                     this.gameOver();
@@ -265,12 +271,8 @@ class Game {
         // 生成buff
         this.spawnBuff();
         
-        // 自动射击（移动端）
-        if (this.isTouching) {
-            this.keys.space = true;
-            this.shoot();
-            this.keys.space = false;
-        }
+        // 自动射击
+        this.shoot();
     }
     
     checkCollision(rect1, rect2) {
@@ -283,33 +285,73 @@ class Game {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // 绘制玩家
+        // 绘制玩家飞机
         this.ctx.fillStyle = '#0071e3';
-        this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.player.x + this.player.width / 2, this.player.y);
+        this.ctx.lineTo(this.player.x + this.player.width, this.player.y + this.player.height);
+        this.ctx.lineTo(this.player.x, this.player.y + this.player.height);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // 添加飞机尾焰
+        this.ctx.fillStyle = '#ff9500';
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.player.x + this.player.width * 0.3, this.player.y + this.player.height);
+        this.ctx.lineTo(this.player.x + this.player.width * 0.5, this.player.y + this.player.height + 15);
+        this.ctx.lineTo(this.player.x + this.player.width * 0.7, this.player.y + this.player.height);
+        this.ctx.closePath();
+        this.ctx.fill();
         
         // 绘制子弹
         this.ctx.fillStyle = '#fff';
         this.bullets.forEach(bullet => {
-            this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            this.ctx.beginPath();
+            this.ctx.arc(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // 添加子弹光效
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = '#fff';
         });
+        this.ctx.shadowBlur = 0;
         
         // 绘制敌人
-        this.ctx.fillStyle = '#ff3b30';
         this.enemies.forEach(enemy => {
-            this.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            // 敌机主体
+            this.ctx.fillStyle = '#ff3b30';
+            this.ctx.beginPath();
+            this.ctx.moveTo(enemy.x + enemy.width / 2, enemy.y + enemy.height);
+            this.ctx.lineTo(enemy.x + enemy.width, enemy.y);
+            this.ctx.lineTo(enemy.x, enemy.y);
+            this.ctx.closePath();
+            this.ctx.fill();
+            
+            // 敌机装饰
+            this.ctx.fillStyle = '#ff9500';
+            this.ctx.fillRect(enemy.x + enemy.width * 0.3, enemy.y, enemy.width * 0.4, enemy.height * 0.3);
         });
         
         // 绘制buff
         this.buffs.forEach(buff => {
             this.ctx.fillStyle = buff.type.color;
             this.ctx.font = '20px Arial';
-            this.ctx.fillText(buff.type.icon, buff.x, buff.y);
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            // 添加光晕效果
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = buff.type.color;
+            this.ctx.fillText(buff.type.icon, buff.x + buff.width / 2, buff.y + buff.height / 2);
+            this.ctx.shadowBlur = 0;
         });
         
         // 绘制护盾效果
         if (this.isInvincible) {
             this.ctx.strokeStyle = '#00ff00';
             this.ctx.lineWidth = 2;
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = '#00ff00';
             this.ctx.beginPath();
             this.ctx.arc(
                 this.player.x + this.player.width / 2,
@@ -319,6 +361,7 @@ class Game {
                 Math.PI * 2
             );
             this.ctx.stroke();
+            this.ctx.shadowBlur = 0;
         }
     }
     
@@ -326,7 +369,6 @@ class Game {
         if (!this.isGameOver && !this.isPaused) {
             this.update();
             this.draw();
-            this.shoot();
             requestAnimationFrame(() => this.gameLoop());
         }
     }
@@ -351,6 +393,41 @@ class Game {
     
     start() {
         this.gameLoop();
+    }
+    
+    // 添加爆炸效果
+    createExplosion(x, y) {
+        const particles = [];
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * 2,
+                vy: Math.sin(angle) * 2,
+                life: 1
+            });
+        }
+        
+        const animate = () => {
+            this.ctx.save();
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                
+                if (p.life > 0) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                    this.ctx.fillStyle = `rgba(255, 59, 48, ${p.life})`;
+                    this.ctx.fill();
+                    requestAnimationFrame(animate);
+                }
+            });
+            this.ctx.restore();
+        };
+        
+        animate();
     }
 }
 
