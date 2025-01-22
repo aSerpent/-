@@ -28,9 +28,62 @@ class Game {
             space: false
         };
         
+        // 添加buff系统
+        this.buffs = [];
+        this.buffTypes = [
+            {
+                type: 'rapidFire',
+                icon: '⚡',
+                color: '#ffcc00',
+                duration: 5000,
+                effect: () => {
+                    const oldRate = this.shootCooldown;
+                    this.shootCooldown = 100;
+                    setTimeout(() => {
+                        this.shootCooldown = oldRate;
+                    }, 5000);
+                }
+            },
+            {
+                type: 'shield',
+                icon: '🛡️',
+                color: '#00ff00',
+                duration: 8000,
+                effect: () => {
+                    this.isInvincible = true;
+                    setTimeout(() => {
+                        this.isInvincible = false;
+                    }, 8000);
+                }
+            },
+            {
+                type: 'multiShot',
+                icon: '🎯',
+                color: '#ff00ff',
+                duration: 6000,
+                effect: () => {
+                    this.isMultiShot = true;
+                    setTimeout(() => {
+                        this.isMultiShot = false;
+                    }, 6000);
+                }
+            }
+        ];
+        
+        // 添加射击冷却
+        this.shootCooldown = 200;
+        this.lastShootTime = 0;
+        this.isInvincible = false;
+        this.isMultiShot = false;
+        
+        // 添加移动端支持
+        this.touchStartX = 0;
+        this.isTouching = false;
+        
         this.bindEvents();
         this.updateScore(0);
         this.updateLives(3);
+        this.bindTouchEvents();
     }
     
     bindEvents() {
@@ -79,17 +132,73 @@ class Game {
         this.enemies.push(enemy);
     }
     
-    shoot() {
-        if (this.keys.space) {
-            const bullet = {
-                x: this.player.x + this.player.width / 2 - 2.5,
-                y: this.player.y,
-                width: 5,
-                height: 10,
-                speed: 7
+    bindTouchEvents() {
+        this.canvas.addEventListener('touchstart', (e) => {
+            this.touchStartX = e.touches[0].clientX;
+            this.isTouching = true;
+        });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (this.isTouching) {
+                const touchX = e.touches[0].clientX;
+                const diff = touchX - this.touchStartX;
+                this.player.x += diff * 0.5;
+                this.touchStartX = touchX;
+                
+                // 确保玩家不会移出屏幕
+                this.player.x = Math.max(0, Math.min(this.canvas.width - this.player.width, this.player.x));
+            }
+        });
+        
+        this.canvas.addEventListener('touchend', () => {
+            this.isTouching = false;
+        });
+    }
+    
+    spawnBuff() {
+        if (Math.random() < 0.01) { // 1%的概率生成buff
+            const buffType = this.buffTypes[Math.floor(Math.random() * this.buffTypes.length)];
+            const buff = {
+                x: Math.random() * (this.canvas.width - 20),
+                y: -20,
+                width: 20,
+                height: 20,
+                speed: 2,
+                type: buffType
             };
-            this.bullets.push(bullet);
-            this.keys.space = false;
+            this.buffs.push(buff);
+        }
+    }
+    
+    shoot() {
+        const currentTime = Date.now();
+        if (this.keys.space && currentTime - this.lastShootTime >= this.shootCooldown) {
+            if (this.isMultiShot) {
+                // 三发子弹
+                for (let i = -1; i <= 1; i++) {
+                    const bullet = {
+                        x: this.player.x + this.player.width / 2 - 2.5 + (i * 10),
+                        y: this.player.y,
+                        width: 5,
+                        height: 10,
+                        speed: 7,
+                        angle: i * 0.2 // 添加一个小角度
+                    };
+                    this.bullets.push(bullet);
+                }
+            } else {
+                // 单发子弹
+                const bullet = {
+                    x: this.player.x + this.player.width / 2 - 2.5,
+                    y: this.player.y,
+                    width: 5,
+                    height: 10,
+                    speed: 7,
+                    angle: 0
+                };
+                this.bullets.push(bullet);
+            }
+            this.lastShootTime = currentTime;
         }
     }
     
@@ -104,8 +213,9 @@ class Game {
         
         // 更新子弹位置
         this.bullets = this.bullets.filter(bullet => {
-            bullet.y -= bullet.speed;
-            return bullet.y > 0;
+            bullet.x += Math.sin(bullet.angle) * bullet.speed;
+            bullet.y -= Math.cos(bullet.angle) * bullet.speed;
+            return bullet.y > 0 && bullet.x > 0 && bullet.x < this.canvas.width;
         });
         
         // 更新敌人位置
@@ -133,10 +243,33 @@ class Game {
             return enemy.y < this.canvas.height;
         });
         
+        // 更新buff
+        this.buffs = this.buffs.filter(buff => {
+            buff.y += buff.speed;
+            
+            // 检查与玩家碰撞
+            if (this.checkCollision(buff, this.player)) {
+                buff.type.effect();
+                return false;
+            }
+            
+            return buff.y < this.canvas.height;
+        });
+        
         // 生成新敌人
         this.frameCount++;
         if (this.frameCount % this.enemySpawnRate === 0) {
             this.spawnEnemy();
+        }
+        
+        // 生成buff
+        this.spawnBuff();
+        
+        // 自动射击（移动端）
+        if (this.isTouching) {
+            this.keys.space = true;
+            this.shoot();
+            this.keys.space = false;
         }
     }
     
@@ -165,6 +298,28 @@ class Game {
         this.enemies.forEach(enemy => {
             this.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         });
+        
+        // 绘制buff
+        this.buffs.forEach(buff => {
+            this.ctx.fillStyle = buff.type.color;
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText(buff.type.icon, buff.x, buff.y);
+        });
+        
+        // 绘制护盾效果
+        if (this.isInvincible) {
+            this.ctx.strokeStyle = '#00ff00';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(
+                this.player.x + this.player.width / 2,
+                this.player.y + this.player.height / 2,
+                this.player.width * 0.8,
+                0,
+                Math.PI * 2
+            );
+            this.ctx.stroke();
+        }
     }
     
     gameLoop() {

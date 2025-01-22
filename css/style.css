@@ -472,4 +472,93 @@ h2 {
 
 .game-link::after {
     display: none;
+}
+
+/* 游戏演示按钮 */
+.game-demo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: var(--accent-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.game-demo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 113, 227, 0.4);
+}
+
+.game-icon {
+    font-size: 1.2em;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.game-text {
+    font-size: 0.9em;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .hero-content h1 {
+        font-size: 3rem;
+    }
+
+    .nav-bar {
+        padding: 0.5rem;
+    }
+
+    .nav-links {
+        gap: 0.5rem;
+        font-size: 0.9em;
+    }
+
+    .floating-elements {
+        display: none;
+    }
+
+    .about-grid, .skills-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .skill-card {
+        margin: 0 1rem;
+    }
+
+    .contact-button {
+        width: 80%;
+        max-width: 300px;
+    }
+
+    .social-links {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .nav-links {
+        font-size: 0.8em;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
 } 

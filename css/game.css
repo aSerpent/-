@@ -108,4 +108,64 @@ body {
     font-size: 1.5em;
     font-weight: bold;
     color: #0071e3;
+}
+
+/* 添加移动端响应式样式 */
+@media (max-width: 850px) {
+    .game-container {
+        padding: 10px;
+        width: 100%;
+        max-width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+        max-height: 70vh;
+    }
+
+    .game-header {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .control-tips {
+        display: none;
+    }
+
+    .game-controls::after {
+        content: '触摸屏幕移动飞机，自动发射子弹';
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #fff;
+    }
+}
+
+/* 添加buff提示样式 */
+.buff-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.9em;
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.buff-notification.show {
+    opacity: 1;
 } 
