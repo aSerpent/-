@@ -450,4 +450,26 @@ h2 {
     .floating-elements {
         display: none;
     }
+}
+
+/* 在现有样式的末尾添加 */
+
+.game-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 15px;
+    background: var(--accent-color);
+    border-radius: 15px;
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+.game-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 113, 227, 0.4);
+}
+
+.game-link::after {
+    display: none;
 } 
