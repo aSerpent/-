@@ -5,6 +5,16 @@
     --background-color: #ffffff;
     --accent-color: #0071e3;
     --card-background: #f5f5f7;
+    --dark-background: #000000;
+    --dark-text: #ffffff;
+    --dark-card: #1c1c1e;
+}
+
+[data-theme="dark"] {
+    --primary-color: #ffffff;
+    --secondary-color: #a1a1a6;
+    --background-color: #000000;
+    --card-background: #1c1c1e;
 }
 
 * {
@@ -18,6 +28,49 @@ body {
     line-height: 1.6;
     color: var(--primary-color);
     background-color: var(--background-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 主题切换按钮 */
+.theme-switch {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+}
+
+.theme-switch-button {
+    width: 60px;
+    height: 30px;
+    background: var(--card-background);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s ease;
+}
+
+.theme-switch-button::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    left: 3px;
+    transition: transform 0.3s ease;
+}
+
+[data-theme="dark"] .theme-switch-button::after {
+    transform: translateX(30px);
+}
+
+.sun, .moon {
+    font-size: 16px;
+    line-height: 30px;
 }
 
 /* 导航栏 */
@@ -32,6 +85,7 @@ body {
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
+    transition: all 0.3s ease;
 }
 
 .logo {
@@ -45,15 +99,27 @@ body {
     gap: 2rem;
 }
 
-.nav-links a {
+.nav-link {
+    position: relative;
     text-decoration: none;
     color: var(--primary-color);
     font-weight: 400;
     transition: color 0.3s ease;
 }
 
-.nav-links a:hover {
-    color: var(--accent-color);
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -5px;
+    left: 0;
+    background-color: var(--accent-color);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
 }
 
 /* 英雄区域 */
@@ -178,13 +244,30 @@ h2 {
 }
 
 .social-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: color 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.social-link:hover {
-    color: var(--accent-color);
+.social-icon {
+    font-size: 2rem;
+    transition: transform 0.3s ease;
+}
+
+.social-hover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    transition: top 0.3s ease;
+}
+
+.social-link:hover .social-icon {
+    transform: translateY(-100%);
+}
+
+.social-link:hover .social-hover {
+    top: 0;
 }
 
 /* 页脚 */
@@ -193,6 +276,161 @@ h2 {
     text-align: center;
     background-color: var(--card-background);
     color: var(--secondary-color);
+}
+
+/* 浮动元素 */
+.floating-elements {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.float-item {
+    position: absolute;
+    font-size: 2rem;
+    animation: float 6s ease-in-out infinite;
+}
+
+.float-item:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+.float-item:nth-child(2) { top: 30%; right: 20%; animation-delay: 2s; }
+.float-item:nth-child(3) { bottom: 30%; left: 30%; animation-delay: 4s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* 滚动指示器 */
+.scroll-indicator {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.mouse {
+    width: 30px;
+    height: 50px;
+    border: 2px solid var(--primary-color);
+    border-radius: 15px;
+    margin: 0 auto 10px;
+    position: relative;
+}
+
+.mouse::before {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 8px;
+    background: var(--primary-color);
+    left: 50%;
+    transform: translateX(-50%);
+    top: 8px;
+    border-radius: 2px;
+    animation: scroll 2s infinite;
+}
+
+@keyframes scroll {
+    0% { transform: translate(-50%, 0); opacity: 1; }
+    100% { transform: translate(-50%, 20px); opacity: 0; }
+}
+
+/* 技能进度条 */
+.skill-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--card-background);
+    border-radius: 3px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.skill-progress {
+    width: 0;
+    height: 100%;
+    background: var(--accent-color);
+    transition: width 1.5s ease;
+}
+
+/* 悬浮旋转 */
+.hover-rotate {
+    transition: transform 0.3s ease;
+}
+
+.hover-rotate:hover {
+    transform: rotate(360deg);
+}
+
+/* 脉冲动画 */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* 页脚波浪 */
+.footer-wave {
+    position: relative;
+    height: 70px;
+    background: var(--card-background);
+}
+
+.footer-wave::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background: var(--card-background);
+    clip-path: polygon(0 0, 100% 100%, 100% 100%, 0% 100%);
+}
+
+/* 粒子效果容器 */
+#particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* 文字渐显 */
+.reveal-text {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal-text.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 打字机效果 */
+.typing-text {
+    border-right: 2px solid var(--primary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--primary-color) }
 }
 
 /* 响应式设计 */
@@ -207,5 +445,9 @@ h2 {
 
     .nav-links {
         gap: 1rem;
+    }
+
+    .floating-elements {
+        display: none;
     }
 } 
